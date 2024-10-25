@@ -2,8 +2,6 @@
 #include <stdlib.h>
 #include <sys/time.h>
 
-#define SIZE 128
-
 __global__ void scan(int size, int* input, int* output){
   int gidx = blockIdx.x*blockDim.x + threadIdx.x;
   output[gidx] = 0;
@@ -20,47 +18,43 @@ double get_clock() {
 }
 
 int main() {
-  // allocate memory
-  int* input;
-  int* output;
-  int* d_input;
-  int* d_output;
-  
-  input = (int*)malloc(sizeof(int) * SIZE);
-  output = (int*)malloc(sizeof(int) * SIZE);
-  cudaMalloc(&d_input, sizeof(int) * SIZE);
-  cudaMalloc(&d_output, sizeof(int) * SIZE);
+  int size[] = {100, 1000, 10000, 100000, 1000000};
+  for (int j = 0; j < 5; j++) {
+      // allocate memory
+      int* input;
+      int* output;
+      int* d_input;
+      int* d_output;
+      input = (int*)malloc(sizeof(int) * size[j]);
+      output = (int*)malloc(sizeof(int) * size[j]);
+      cudaMalloc(&d_input, sizeof(int) * size[j]);
+      cudaMalloc(&d_output, sizeof(int) * size[j]);
 
-  // initialize inputs
-  for (int i = 0; i < SIZE; i++) {
-    input[i] = 1;
+      // initialize inputs
+      for (int i = 0; i < size[j]; i++) {
+       	  input[i] = 1;
+      }
+
+      cudaMemcpy(d_input, input, sizeof(int) * size[j], cudaMemcpyHostToDevice);
+  
+      // do the scan
+      int thread = 128;
+      double t0 = get_clock();
+      scan<<<(size[j]+thread-1)/thread, thread>>>(size[j], d_input, d_output);
+      cudaDeviceSynchronize();
+  
+      double t1 = get_clock();
+      printf("time for input size %d: %f s\n", size[j], t1-t0);
+
+      // check results
+      cudaMemcpy(output, d_output, sizeof(int) * size[j], cudaMemcpyDeviceToHost);
+
+      // free mem
+      free(input);
+      free(output);
+      cudaFree(d_input);
+      cudaFree(d_output);
   }
-  
-  cudaMemcpy(d_input, input, sizeof(int) * SIZE, cudaMemcpyHostToDevice);
-  
-  // do the scan
-  int thread = 32;
-  double t0 = get_clock();
-  
-  scan<<<(SIZE+SIZE-1)/thread, thread>>>(SIZE, d_input, d_output);
-  cudaDeviceSynchronize();
-  
-  double t1 = get_clock();
-  printf("time for input size %d: %f s\n", SIZE, t1-t0);
-
-  // check results
-  cudaMemcpy(output, d_output, sizeof(int) * SIZE, cudaMemcpyDeviceToHost);
-
-  for (int i = 0; i < SIZE; i++) {
-    printf("%d ", output[i]);
-  }
-  printf("\n");
-
-  // free mem
-  free(input);
-  free(output);
-  cudaFree(d_input);
-  cudaFree(d_output);
 
   return 0;
 }
