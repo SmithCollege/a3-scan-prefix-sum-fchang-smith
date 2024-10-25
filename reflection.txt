@@ -1,0 +1,15 @@
+
+Did your graph match your runtime analysis expectations?
+The graph maches my expectation in that generally, runtime of double_buffer approach is faster than naive one, and naive approach is faster than cpu implemented version. 
+
+What went well with this assignment?
+It is great to learn how to measure runtime.
+
+What was difficult?
+I made a very stupit mistake when I tested the double_buffer.cu. I compiled the file as double_buffer once and forgot to do so later. However, I repeated to call ./double_buffer and found my modification did not change any result. I was frustrated until I realized I should call ./a.out instead. 
+
+How would you approach it differently?
+In naive.cu and double_buffer.cu, I modified data in the global memory directly. I probably would create a shared memory to opimize the performance next time.
+
+Anything else you want me to know?
+I only tried 5 differnt size of n (from 100 to 1000000) since size bigger than that requires crazy long time to run. 
